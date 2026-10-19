@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MUMU</title>
+<style>
+:root{--bg:#1d1630;--card:#2a2142;--ink:#f4efff;--mut:#a99cc8;--acc:#7bd36a;--warn:#ff7a6b;--line:#3b3058;--chip:#3a2f58}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:780px;margin:0 auto;padding:0 12px 40px}
+#stage{position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 85%,transparent);padding:12px 0 10px;display:flex;gap:14px;align-items:center}
+#face{width:132px;height:132px;border-radius:22px;flex:none;box-shadow:0 0 0 4px #120d20,0 0 0 7px #4b3d73;background:#70c956}
+#stage h1{margin:0;font-size:26px;letter-spacing:1px}
+#now{color:var(--mut);font-size:13px;min-height:1.3em}
+#status{color:var(--mut);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font:inherit;font-size:12px;border:0;border-radius:20px;padding:4px 10px;background:var(--chip);color:var(--ink);cursor:pointer}
+.chip.on{background:var(--acc);color:#1d1630}
+section{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
+h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.key{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px}
+.key h3{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.key h3 small{color:var(--mut);font-weight:400}
+.tabs{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+.tab{font:inherit;font-size:13px;border:0;border-radius:8px;padding:5px 10px;background:transparent;color:var(--mut);cursor:pointer}
+.tab.on{background:var(--chip);color:var(--ink)}
+.tab b{display:inline-block;min-width:18px;margin-left:4px;font-size:11px;background:#1d1630;border-radius:9px;padding:0 5px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+li:first-child{border-top:0}
+li .nm{flex:1 1 120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+li em{color:var(--mut);font-style:normal;font-size:12px}
+li select{width:auto;padding:4px 6px;font-size:13px}
+.empty{color:var(--mut);font-size:13px;padding:4px 0 8px}
+button{font:inherit;border:0;border-radius:9px;padding:7px 12px;background:#463a68;color:var(--ink);cursor:pointer}
+button.ic{padding:5px 9px}
+button.go{background:var(--acc);color:#1d1630;font-weight:600}
+button.del{background:transparent;color:var(--warn)}
+.drop{display:block;margin-top:8px;border:2px dashed var(--line);border-radius:10px;padding:10px;text-align:center;color:var(--mut);cursor:pointer}
+.drop.over{border-color:var(--acc);color:var(--ink)}
+.drop input{display:none}
+.prog{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px;display:none}
+.prog i{display:block;height:100%;width:0;background:var(--acc)}
+.msg{font-size:13px;color:var(--mut);margin-top:4px;min-height:1em}
+.msg.err{color:var(--warn)}
+.hint{font-size:13px;color:var(--mut);margin:0 0 6px}
+label.row{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;margin:10px 0}
+label.row small{grid-column:1/-1;color:var(--mut);font-size:12px}
+input[type=range]{width:100%;grid-column:1/-1}
+input[type=text],input[type=password],input[type=number],select{font:inherit;background:#1d1630;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+footer{color:var(--mut);font-size:12px;text-align:center;margin-top:20px}
+</style></head><body>
+<main>
+<div id="stage">
+  <canvas id="face" width="264" height="264"></canvas>
+  <div style="min-width:0">
+    <h1 id="title">MUMU</h1>
+    <div id="now">Tap ▶ on a sound to preview it here.</div>
+    <div id="status">Connecting…</div>
+  </div>
+</div>
+
+<section>
+  <h2>Animations</h2>
+  <p class="hint">Tap one to see it. Pick an animation for each sound in the lists below.</p>
+  <div class="chips" id="animchips"></div>
+</section>
+
+<section>
+  <h2>Keys</h2>
+  <p class="hint">Every key has four ways to press it. A key that only has <b>Press</b> sounds reacts instantly; once it has Double/Triple/Hold sounds it waits a moment to see which one you meant. Drop any audio file (MP3, M4A, WAV…) — it's trimmed, levelled and converted on this phone before upload.</p>
+  <div id="keys"></div>
+</section>
+
+<section>
+  <h2>When nobody is playing</h2>
+  <p class="hint">MUMU sings or plays one of these now and then while awake.</p>
+  <div class="grid2">
+    <label>Sing after idle (s, 0 = never)<input type="number" id="idle" min="0"></label>
+    <label>Built-in songs<select id="songs"><option value="1">Yes</option><option value="0">No</option></select></label>
+  </div>
+  <div class="chips" id="songbtns" style="margin:10px 0 4px"></div>
+  <div id="idlebox"></div>
+</section>
+
+<section>
+  <h2>Poke the eyes</h2>
+  <p class="hint" id="eyehint">Tap one of MUMU's eyes on the screen and it plays one of these. Each eye has its own sounds; with none, it just winks and goes "pop". Swipe up or down on the screen to change the volume.</p>
+  <div class="key"><h3>Left eye <small>as you look at MUMU</small></h3><div id="eyeL"></div></div>
+  <div class="key"><h3>Right eye <small>as you look at MUMU</small></h3><div id="eyeR"></div></div>
+</section>
+
+<section>
+  <h2>Special moments</h2>
+  <ul id="specials"></ul>
+</section>
+
+<section>
+  <h2>Settings</h2>
+  <label class="row">Volume <b id="volv"></b><input type="range" id="volume" min="0" max="10"></label>
+  <label class="row">Loudest allowed <b id="maxv"></b><input type="range" id="maxDb" min="-30" max="0">
+    <small>Kid-safe cap: volume 10 never goes above this. Start low and raise it carefully.</small></label>
+  <label class="row">Screen brightness <b id="briv"></b><input type="range" id="bright" min="10" max="100" step="5"></label>
+  <div class="grid2">
+    <label>Gets sleepy after (s)<input type="number" id="sleep" min="10"></label>
+    <label>Screen off after (s, 0 = never)<input type="number" id="off" min="0"></label>
+  </div>
+  <div class="grid2" style="margin-top:10px">
+    <label>Colour<select id="color"></select></label>
+    <label>Order<select id="shuffle"><option value="1">Shuffle</option><option value="0">In order</option></select></label>
+  </div>
+  <p class="msg">Setup hotspot password (8+ characters)</p>
+  <input type="text" id="apPass">
+  <p class="msg">Home Wi-Fi (optional — setup mode joins it instead of making a hotspot)</p>
+  <div class="grid2"><input type="text" id="ssid" placeholder="Network name"><input type="password" id="spass" placeholder="Password (unchanged)"></div>
+  <p><button class="go" id="save">Save settings</button> <span class="msg" id="setmsg"></span></p>
+</section>
+
+<section>
+  <h2>Firmware update</h2>
+  <label class="drop">Choose firmware .bin<input type="file" id="fw" accept=".bin"></label>
+  <div class="prog" id="fwprog"><i></i></div><div class="msg" id="fwmsg"></div>
+</section>
+
+<section>
+  <h2>Done?</h2>
+  <p class="hint">Restart to leave setup mode and go back to playing.</p>
+  <button class="go" id="reboot">Restart MUMU</button>
+</section>
+<footer id="foot"></footer>
+</main>
+<script>
+/*@FACE_JS@*/
+
+const KEYNAMES=["laughs","gasps","goes silly","falls in love","gets dizzy"];
+const GEST=[["","Press"],["d","Double"],["t","Triple"],["h","Hold"]];
+const ANIM_LABEL={laugh:"😆 laugh",gasp:"😮 gasp",silly:"🤪 silly",love:"😍 love",dizzy:"😵 dizzy",angry:"😠 angry",scared:"😱 scared",
+  sing:"🎵 sing",poke:"👆 wink",cool:"😎 cool",sneeze:"🤧 sneeze",sad:"😢 sad",party:"🥳 party",kiss:"😘 kiss",toot:"💨 toot"};
+const SONGS=["Twinkle Twinkle","Frère Jacques","Mary's Lamb","Ode to Joy","Old MacDonald"];
+const SPECIAL={hello:"Played when switched on",goodnight:"Played when it falls asleep",dizzy:"Played when the keys get mashed"};
+const RATE=22050;
+let S=null; const tabSel={};
+const $=id=>document.getElementById(id);
+const kb=b=>b>1048576?(b/1048576).toFixed(1)+" MB":Math.max(1,Math.round(b/1024))+" kB";
+const secs=b=>{ const t=(b-44)/(RATE*2); return t<60 ? t.toFixed(1)+" s" : Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,"0"); };
+const enc=encodeURIComponent;
+
+// ---------------- face preview ----------------
+const face=new MumuFace($("face"));
+let actx=null, analyser=null, src=null, playing=false, level=0, tbuf=null;
+function ensureAudio(){
+  if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); analyser=actx.createAnalyser(); analyser.fftSize=512;
+    analyser.connect(actx.destination); tbuf=new Float32Array(analyser.fftSize); }
+  if(actx.state==="suspended") actx.resume();
+}
+function stopAudio(){ if(src){ try{src.stop()}catch(e){} src=null; } playing=false; }
+async function previewSound(slot,name,anim,key){
+  face.pokeEye = slot==="eyeR"?1:0;
+  stopAudio();
+  $("now").textContent=`Loading ${name.replace(/\.wav$/i,"")}…`;
+  try{
+    ensureAudio();
+    const buf=await (await fetch(`/api/file?slot=${enc(slot)}&name=${enc(name)}`)).arrayBuffer();
+    const ab=await actx.decodeAudioData(buf);
+    src=actx.createBufferSource(); src.buffer=ab; src.connect(analyser);
+    src.onended=()=>{ playing=false; };
+    face.react(anim,key); src.start(); playing=true;
+    $("now").textContent=`▶ ${name.replace(/\.wav$/i,"")} · ${ANIM_LABEL[anim]||anim}`;
+  }catch(e){ face.react(anim,key); $("now").textContent=`${ANIM_LABEL[anim]||anim} (this browser can't play the sound)`; }
+}
+function previewAnim(anim){ stopAudio(); face.react(anim); $("now").textContent=`Animation: ${ANIM_LABEL[anim]||anim}`;
+  document.querySelectorAll("#animchips .chip").forEach(c=>c.classList.toggle("on",c.dataset.a===anim)); }
+let last=performance.now();
+function frame(t){
+  const dt=(t-last)/1000; last=t;
+  if(playing&&analyser){ analyser.getFloatTimeDomainData(tbuf); let pk=0; for(const v of tbuf) pk=Math.max(pk,Math.abs(v));
+    level = pk>level ? pk : level*0.8+pk*0.2; } else level=0;
+  face.update(dt,level,playing); face.render(); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------------- state ----------------
+async function load(){
+  try{ S=await (await fetch("/api/state")).json(); }catch(e){ $("status").textContent="Lost connection — is MUMU still in setup mode?"; return; }
+  $("title").textContent=S.name; document.title=S.name;
+  face.setColor(S.set.color);
+  $("status").textContent=`Battery ${(S.batt/1000).toFixed(2)} V${S.usb?" · charging":""} · SD ${S.sd?kb(S.sdFree)+" free":"MISSING — insert a card"} · v${S.fw}`;
+  renderChips(); renderKeys(); renderIdle(); renderEyes(); renderSpecials(); fillSettings();
+}
+
+function renderChips(){
+  const box=$("animchips"); if(box.childElementCount) return;
+  S.anims.forEach(a=>{ const b=document.createElement("button"); b.className="chip"; b.dataset.a=a; b.textContent=ANIM_LABEL[a]||a;
+    b.onclick=()=>previewAnim(a); box.appendChild(b); });
+  const sb=$("songbtns");
+  SONGS.forEach((n,i)=>{ const b=document.createElement("button"); b.className="chip"; b.textContent="▶ "+n+" on MUMU";
+    b.onclick=()=>{ post("/api/play",{fx:10+i,anim:"sing"}); face.react("sing"); $("now").textContent="MUMU is singing "+n; }; sb.appendChild(b); });
+}
+
+function animSelect(cur,def){
+  const s=document.createElement("select");
+  s.innerHTML=`<option value="">${ANIM_LABEL[def]||def} (default)</option>`+S.anims.map(a=>`<option value="${a}">${ANIM_LABEL[a]||a}</option>`).join("");
+  s.value=cur||""; return s;
+}
+
+function fileList(slotId,key){
+  const slot=S.slots[slotId], wrap=document.createElement("div"), ul=document.createElement("ul");
+  if(!slot.files.length) wrap.insertAdjacentHTML("beforeend",`<div class="empty">${slotId.length===1?"No sounds yet — plays a built-in effect.":slotId==="idle"?"No idle sounds yet.":slotId.startsWith("eye")?"No sounds yet — winks and pops.":"Nothing here — falls back to the single press."}</div>`);
+  slot.files.forEach(f=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="nm"></span><em>${secs(f.s)}</em>`;
+    li.querySelector(".nm").textContent=f.n.replace(/\.wav$/i,"");
+    const sel=animSelect(f.a,slot.def);
+    const effective=()=>sel.value||slot.def;
+    sel.onchange=async()=>{ f.a=sel.value; await post("/api/anim",{slot:slotId,name:f.n,anim:sel.value}); previewSound(slotId,f.n,effective(),key); };
+    const pv=btn("▶","Preview here",()=>previewSound(slotId,f.n,effective(),key));
+    const dv=btn("📟","Play on MUMU",()=>post("/api/play",{slot:slotId,name:f.n}));
+    const dl=btn("✕","Delete",async()=>{ if(confirm("Delete "+f.n+"?")){ await post("/api/delete",{slot:slotId,name:f.n}); load(); } },"del");
+    li.append(sel,pv,dv,dl); ul.appendChild(li);
+  });
+  wrap.appendChild(ul);
+  wrap.appendChild(dropZone(slotId,true,"+ Add sounds"));
+  return wrap;
+}
+
+function btn(t,title,fn,cls){ const b=document.createElement("button"); b.className="ic"+(cls?" "+cls:""); b.textContent=t; b.title=title; b.onclick=fn; return b; }
+
+function renderKeys(){
+  const box=$("keys"); box.innerHTML="";
+  for(let k=0;k<5;k++){
+    const d=document.createElement("div"); d.className="key";
+    d.innerHTML=`<h3>Key ${k+1} <small>MUMU ${KEYNAMES[k]}</small></h3>`;
+    const tabs=document.createElement("div"); tabs.className="tabs"; const body=document.createElement("div");
+    const sel=tabSel[k]||"";
+    GEST.forEach(([suf,label])=>{
+      const id=(k+1)+suf, n=S.slots[id].files.length;
+      const t=document.createElement("button"); t.className="tab"+(suf===sel?" on":"");
+      t.innerHTML=`${label}<b>${n}</b>`;
+      t.onclick=()=>{ tabSel[k]=suf; renderKeys(); };
+      tabs.appendChild(t);
+    });
+    body.appendChild(fileList((k+1)+sel,k));
+    d.append(tabs,body); box.appendChild(d);
+  }
+}
+
+function renderIdle(){ const b=$("idlebox"); b.innerHTML=""; b.appendChild(fileList("idle",-1)); }
+function renderEyes(){
+  for(const id of ["eyeL","eyeR"]){ const b=$(id); b.innerHTML=""; b.appendChild(fileList(id,-1)); }
+  if(S.touch===false) $("eyehint").textContent="This MUMU's screen has no touch, so eye pokes and swipe-volume won't work on it — but you can still set sounds up here.";
+}
+
+function renderSpecials(){
+  const ul=$("specials"); ul.innerHTML="";
+  for(const k in SPECIAL){
+    const li=document.createElement("li"), has=S.special[k];
+    li.innerHTML=`<span class="nm"><b style="text-transform:capitalize">${k}</b><br><em>${SPECIAL[k]} — ${has?"custom sound":"built-in"}</em></span>`;
+    if(has) li.append(btn("📟","Play on MUMU",()=>post("/api/play",{slot:k})), btn("✕","Delete",async()=>{await post("/api/delete",{slot:k}); load();},"del"));
+    const z=dropZone(k,false,has?"Replace":"Upload"); z.style.width="100%"; li.appendChild(z);
+    ul.appendChild(li);
+  }
+}
+
+function dropZone(slot, multi, label){
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<label class="drop">${label}<input type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.aac,.flac" ${multi?"multiple":""}></label><div class="prog"><i></i></div><div class="msg"></div>`;
+  const lab=wrap.querySelector(".drop"), inp=wrap.querySelector("input");
+  const ui={bar:wrap.querySelector(".prog"),msg:wrap.querySelector(".msg")};
+  inp.onchange=()=>handleFiles(slot,[...inp.files],ui);
+  lab.ondragover=e=>{e.preventDefault();lab.classList.add("over")};
+  lab.ondragleave=()=>lab.classList.remove("over");
+  lab.ondrop=e=>{e.preventDefault();lab.classList.remove("over");handleFiles(slot,[...e.dataTransfer.files],ui)};
+  return wrap;
+}
+
+async function handleFiles(slot, files, ui){
+  for(const f of files){
+    try{
+      say(ui,`Converting ${f.name}…`);
+      const {wav,dur}=await convert(f);
+      say(ui,`Uploading ${f.name} (${secs(44+dur*RATE*2)}, ${kb(wav.size)})…`);
+      const name=f.name.replace(/\.[^.]+$/,"")+".wav";
+      await upload(`/api/upload?slot=${enc(slot)}&name=${enc(name)}`, wav, name, ui);
+      say(ui,`Added ${name} ✓ — pick an animation for it`);
+    }catch(e){ say(ui,`${f.name}: ${e.message||e}`,true); }
+  }
+  await load();
+}
+function say(ui,t,err){ ui.msg.textContent=t; ui.msg.className="msg"+(err?" err":""); }
+
+// ---- audio conversion: decode -> mono 22.05 kHz -> trim -> normalise -> WAV
+async function convert(file){
+  const buf=await file.arrayBuffer();
+  const Ctx=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  const dec=await new Promise((ok,bad)=>{ const c=new Ctx(1,1,RATE); const p=c.decodeAudioData(buf,ok,()=>bad(new Error("can't read this audio format"))); if(p&&p.catch)p.catch(()=>{}); });
+  const len=Math.ceil(dec.duration*RATE);
+  const off=new Ctx(1,len,RATE);
+  const s=off.createBufferSource(); s.buffer=dec; s.connect(off.destination); s.start();
+  let d=(await off.startRendering()).getChannelData(0);
+  let peak=0; for(const v of d) peak=Math.max(peak,Math.abs(v));
+  if(peak<1e-4) throw new Error("the file is silent");
+  const th=Math.max(0.01,peak*0.02), pad=Math.round(RATE*0.03);
+  let a=0,b=d.length-1; while(a<b&&Math.abs(d[a])<th)a++; while(b>a&&Math.abs(d[b])<th)b--;
+  a=Math.max(0,a-pad); b=Math.min(d.length-1,b+pad*3);
+  d=d.slice(a,b+1);
+  const g=0.89/peak, fade=Math.round(RATE*0.008);
+  const n=d.length, out=new DataView(new ArrayBuffer(44+n*2));
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)out.setUint8(o+i,s.charCodeAt(i))};
+  w(0,"RIFF");out.setUint32(4,36+n*2,true);w(8,"WAVEfmt ");out.setUint32(16,16,true);out.setUint16(20,1,true);out.setUint16(22,1,true);
+  out.setUint32(24,RATE,true);out.setUint32(28,RATE*2,true);out.setUint16(32,2,true);out.setUint16(34,16,true);w(36,"data");out.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){ let v=d[i]*g; if(i<fade)v*=i/fade; if(i>n-fade)v*=(n-i)/fade; v=Math.max(-1,Math.min(1,v)); out.setInt16(44+i*2,v*32767,true); }
+  return {wav:new Blob([out],{type:"audio/wav"}),dur:n/RATE};
+}
+
+function upload(url, blob, name, ui){
+  return new Promise((ok,bad)=>{
+    const fd=new FormData(); fd.append("file",blob,name);
+    const x=new XMLHttpRequest(); x.open("POST",url);
+    ui.bar.style.display="block"; const bar=ui.bar.firstChild;
+    x.upload.onprogress=e=>{ if(e.lengthComputable) bar.style.width=(100*e.loaded/e.total)+"%"; };
+    x.onload=()=>{ ui.bar.style.display="none"; bar.style.width=0;
+      let r={}; try{r=JSON.parse(x.responseText)}catch(e){}
+      (x.status==200&&r.ok)?ok(r):bad(new Error(r.err||("upload failed ("+x.status+")"))); };
+    x.onerror=()=>{ ui.bar.style.display="none"; bad(new Error("connection lost")); };
+    x.send(fd);
+  });
+}
+
+async function post(url, params){
+  const r=await fetch(url+"?"+new URLSearchParams(params),{method:"POST"});
+  return r.json().catch(()=>({}));
+}
+
+// ---- settings
+function fillSettings(){
+  const s=S.set;
+  $("color").innerHTML=S.colors.map((c,i)=>`<option value="${i}">${c}</option>`).join("");
+  for(const k of ["volume","maxDb","sleep","off","idle","color","bright","apPass","ssid"]) $(k).value=s[k];
+  $("shuffle").value=s.shuffle?"1":"0"; $("songs").value=s.songs?"1":"0";
+  labels();
+}
+function labels(){ $("volv").textContent=$("volume").value; $("maxv").textContent=$("maxDb").value+" dB"; $("briv").textContent=$("bright").value+"%"; }
+["volume","maxDb","bright"].forEach(k=>$(k).oninput=labels);
+$("volume").onchange=()=>post("/api/settings",{volume:$("volume").value}).then(()=>post("/api/play",{fx:5}));
+$("maxDb").onchange=()=>post("/api/settings",{maxDb:$("maxDb").value}).then(()=>post("/api/play",{fx:5}));
+$("bright").onchange=()=>post("/api/settings",{bright:$("bright").value});
+$("color").onchange=()=>{ face.setColor(+$("color").value); post("/api/settings",{color:$("color").value}); };
+$("idle").onchange=()=>post("/api/settings",{idle:$("idle").value});
+$("songs").onchange=()=>post("/api/settings",{songs:$("songs").value});
+$("save").onclick=async()=>{
+  const p={}; for(const k of ["volume","maxDb","sleep","off","idle","songs","color","bright","shuffle","apPass","ssid","spass"]) p[k]=$(k).value;
+  if(p.apPass.length<8){ $("setmsg").textContent="Hotspot password needs 8+ characters"; return; }
+  if(!p.spass) delete p.spass;
+  await post("/api/settings",p); $("setmsg").textContent="Saved ✓"; setTimeout(()=>$("setmsg").textContent="",2000);
+};
+
+// ---- firmware
+$("fw").onchange=async()=>{
+  const f=$("fw").files[0]; if(!f) return;
+  if(!confirm("Install "+f.name+"? MUMU restarts when done.")) return;
+  const ui={bar:$("fwprog"),msg:$("fwmsg")};
+  say(ui,"Uploading firmware — keep this page open…");
+  try{ await upload("/update",f,f.name,ui); say(ui,"Installed ✓ Restarting…"); }
+  catch(e){ say(ui,e.message,true); }
+};
+$("reboot").onclick=async()=>{ await post("/api/reboot",{}); document.body.innerHTML="<p style='padding:20px'>Restarting… you can close this page.</p>"; };
+
+load();
+</script></body></html>
