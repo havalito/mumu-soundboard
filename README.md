@@ -4,6 +4,8 @@ Custom firmware for the kids' soundboard built on the **Spotpear ESP32-S3 "AI 1.
 five Cherry MX keys, the salvaged JBL driver on the board's speaker connector, and MUMU, an animated
 monster face on the 1.54" screen.
 
+Aliexpress link: https://www.aliexpress.com/item/1005008893196682.html
+
 ![face preview](face-preview.gif)
 
 ## What it does
